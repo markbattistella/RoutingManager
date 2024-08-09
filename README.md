@@ -142,4 +142,4 @@ Contributions are welcome! If you have suggestions or improvements, please fork 
 
 ## License
 
-`RoutingManager` is released under the MIT license. See [LICENSE](https://raw.githubusercontent.com/markbattistella/RoutingManager/main/LICENCE) for details.
+`RoutingManager` is released under the MIT license. See [LICENSE](https://github.com/markbattistella/RoutingManager/blob/main/LICENSE) for details.
