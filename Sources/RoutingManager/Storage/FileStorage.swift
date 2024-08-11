@@ -12,8 +12,9 @@ import Foundation
 /// `FileStorage` provides a uniform interface for saving, loading, deleting, and listing
 /// items stored using any storage that conforms to `FileStorageRepresentable`.
 ///
-/// - Note: This class uses generics to support any type `T` that conforms to `Codable`.
-public class FileStorage<T> where T: Codable {
+/// - Note: This class uses generics to support any type `T` that conforms to `Serializable`.
+@MainActor
+public final class FileStorage<T> where T: Serializable {
     private let _save: (T, String) async throws -> Void
     private let _load: (String) async throws -> T?
     private let _delete: (String) async throws -> Void
@@ -23,7 +24,7 @@ public class FileStorage<T> where T: Codable {
     ///
     /// - Parameter storage: A storage instance conforming to `FileStorageRepresentable`.
     ///   This storage instance determines how data is saved, loaded, and deleted.
-    public init<U>(_ storage: U) where T == U.T, U: FileStorageRepresentable {
+    public init<U>(_ storage: U) where T == U.T, U: FileStorageRepresentable, U: Sendable {
         self._save = storage.save
         self._load = storage.load
         self._delete = storage.delete
@@ -33,7 +34,7 @@ public class FileStorage<T> where T: Codable {
     /// Saves an object to storage under the specified file name.
     ///
     /// - Parameters:
-    ///   - object: The object to save. This object must conform to `Codable`.
+    ///   - object: The object to save. This object must conform to `Serializable`.
     ///   - fileName: The name under which the object will be saved.
     /// - Throws: An error if the save operation fails.
     public func save(_ object: T, as fileName: String) async throws {
@@ -65,3 +66,5 @@ public class FileStorage<T> where T: Codable {
         return try await _listAllIdentifiers()
     }
 }
+
+extension FileStorage: Sendable {}

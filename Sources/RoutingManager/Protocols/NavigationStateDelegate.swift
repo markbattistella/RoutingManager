@@ -13,7 +13,8 @@ import Foundation
 /// This protocol is designed to be implemented by classes or structs that manage navigation states
 /// with routes conforming to the `NavigationRouteRepresentable` protocol. The protocol is internal,
 /// meaning it's only accessible within the module in which it's defined.
-internal protocol NavigationStateDelegate {
+@MainActor
+internal protocol NavigationStateDelegate: Sendable {
 
     /// The type of route that this delegate will manage.
     associatedtype Route: NavigationRouteRepresentable
@@ -24,7 +25,7 @@ internal protocol NavigationStateDelegate {
     ///   - identifier: The optional path identifier to associate with the route stack.
     /// - Returns: The result of the save operation, indicating success or failure.
     @discardableResult
-    func saveRouteStack(with identifier: PathIdentifier?) -> NavigationResult
+    func saveRouteStack(with identifier: PathIdentifier?) async -> NavigationResult
 
     /// Updates the route stack with a new set of routes and persists the changes.
     ///

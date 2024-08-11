@@ -12,6 +12,7 @@ import Observation
 /// The `NavigationManager` class provides a set of methods to navigate between screens,
 /// save and load route stacks, and manage the persistence of navigation states.
 /// It is designed to work with routes conforming to the `NavigationRouteRepresentable` protocol.
+@MainActor
 @Observable
 public class NavigationManager<Route: NavigationRouteRepresentable> {
 
@@ -364,8 +365,6 @@ extension NavigationManager {
     /// - Parameters:
     ///   - result: The result to set as the last result.
     private func updateLastResult(_ result: NavigationResult) {
-        DispatchQueue.main.async {
-            self.lastResult = result
-        }
+        self.lastResult = result
     }
 }

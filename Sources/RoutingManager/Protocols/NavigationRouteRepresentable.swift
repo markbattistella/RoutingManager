@@ -6,13 +6,6 @@
 
 import SwiftUI
 
-/// A typealias that combines several protocols commonly used in SwiftUI and Codable contexts.
-///
-/// `Representable` is a shorthand for a type that conforms to `Identifiable`, `Hashable`, `View`,
-/// and `Codable`. This typealias is useful for defining types that need to be both identifiable,
-/// hashable, representable as a SwiftUI view, and encodable/decodable for data persistence.
-public typealias Representable = Identifiable & Hashable & View & Codable
-
 /// A protocol that represents a navigable route in a SwiftUI application.
 ///
 /// `NavigationRouteRepresentable` extends `Representable` to require an `id` property for

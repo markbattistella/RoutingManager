@@ -14,8 +14,9 @@ import Foundation
 /// storing data in memory, on the file system, or in a custom storage implementation.
 ///
 /// - Note: The generic type `T` represents the type of data being stored, which must conform
-/// to `Codable`.
-public enum NavigationStorageOption<T> where T: Codable {
+/// to `Serializable`.
+@MainActor
+public enum NavigationStorageOption<T> where T: Serializable {
 
     /// Stores data in memory, providing a non-persistent storage option.
     case inMemory
@@ -52,7 +53,7 @@ public enum NavigationStorageOption<T> where T: Codable {
     ///
     /// - Returns: A `FileStorage` instance that handles storage for path identifiers according
     /// to the selected option.
-    internal func createStorageForIdentifiers<U>() -> FileStorage<[U]> where U: Codable {
+    internal func createStorageForIdentifiers<U>() -> FileStorage<[U]> where U: Serializable {
         switch self {
             case .inMemory:
                 return FileStorage(InMemoryStorage<[U]>())

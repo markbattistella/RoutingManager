@@ -13,16 +13,16 @@ import Foundation
 ///
 /// - Note: This enum provides a simple way to manage the success or failure of navigation-related
 /// operations.
-public enum NavigationResult {
-
+public enum NavigationResult: Sendable {
+    
     /// The operation was successful.
     case success
-
+    
     /// The operation failed with a specific error.
     ///
     /// - Parameter error: The `NavigationError` that occurred during the operation.
     case failure(NavigationError)
-
+    
     /// Executes a handler if the result is a failure, passing the error to the handler.
     ///
     /// - Parameter handler: A closure that handles the `NavigationError` if the result is a failure.

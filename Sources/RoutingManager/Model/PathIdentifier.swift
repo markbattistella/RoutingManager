@@ -11,9 +11,9 @@ import Foundation
 /// `PathIdentifier` is used to distinguish different navigation paths, both by a unique 
 /// identifier (UUID) and a human-readable label. The label is optional and defaults to "default".
 ///
-/// - Note: This structure conforms to `Codable` and `Hashable`, making it suitable for use in 
+/// - Note: This structure conforms to `Serializable` and `Hashable`, making it suitable for use in
 /// serialization and collections.
-public struct PathIdentifier: Codable, Hashable {
+public struct PathIdentifier: Serializable, Hashable {
 
     /// A unique identifier for the navigation path.
     public let id: UUID

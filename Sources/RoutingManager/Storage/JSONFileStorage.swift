@@ -6,94 +6,158 @@
 
 import Foundation
 
-/// A file-based storage class that saves objects in JSON format, conforming to
-/// `FileStorageRepresentable`.
+/// A thread-safe, JSON file storage class for storing and retrieving objects conforming to 
+/// `Serializable`.
 ///
-/// `JSONFileStorage` provides a way to persist objects to the file system using JSON encoding.
-/// This class supports saving, loading, deleting, and listing objects by their identifiers, with
-/// an optional file prefix for distinguishing different types of data.
-///
-/// - Note: Objects are stored in the specified directory as JSON files, with an optional prefix
-/// to prevent conflicts between different types of stored data.
-internal class JSONFileStorage<T>: FileStorageRepresentable where T: Codable {
+/// This class uses an internal actor to ensure that all file operations are performed safely in 
+/// a concurrent environment.
+internal final class JSONFileStorage<T>: FileStorageRepresentable where T: Serializable {
 
-    private let fileManager = FileManager.default
     private let directory: URL
     private let filePrefix: String?
+
+    /// An actor responsible for managing file operations.
+    ///
+    /// The `FileActor` ensures that all file operations are thread-safe and occur in a 
+    /// serialized manner.
+    private actor FileActor {
+
+        private let directory: URL
+        private let filePrefix: String?
+
+        init(directory: URL, filePrefix: String?) {
+            self.directory = directory
+            self.filePrefix = filePrefix
+        }
+
+        /// Returns the file URL for a given identifier by appending the `.json` extension and 
+        /// an optional prefix.
+        ///
+        /// - Parameter identifier: The key used to identify the object.
+        /// - Returns: A URL pointing to the file location in the specified directory.
+        private func fileURL(for identifier: String) -> URL {
+            let prefixedIdentifier = filePrefix.map { "\($0)\(identifier)" } ?? identifier
+            return directory
+                .appendingPathComponent(prefixedIdentifier)
+                .appendingPathExtension("json")
+        }
+
+        /// Saves an object to the file system as a JSON file with the specified identifier.
+        ///
+        /// - Parameters:
+        ///   - object: The object to save. This object must conform to `Serializable`.
+        ///   - identifier: The key under which the object will be saved.
+        /// - Throws: An error if the save operation fails.
+        func save(_ object: T, with identifier: String) throws {
+            let data = try JSONEncoder().encode(object)
+            let url = fileURL(for: identifier)
+            try data.write(to: url)
+        }
+
+        /// Loads an object from the file system with the specified identifier.
+        ///
+        /// - Parameter identifier: The key of the object to load.
+        /// - Returns: The loaded object, or `nil` if no object was found for the given identifier.
+        /// - Throws: An error if the load operation fails.
+        func load(file identifier: String) throws -> T? {
+            let url = fileURL(for: identifier)
+            guard FileManager.default.fileExists(atPath: url.path) else {
+                return nil
+            }
+            let data = try Data(contentsOf: url)
+            return try JSONDecoder().decode(T.self, from: data)
+        }
+
+        /// Deletes an object from the file system with the specified identifier.
+        ///
+        /// - Parameter identifier: The key of the object to delete.
+        /// - Throws: An error if the delete operation fails.
+        func delete(file identifier: String) throws {
+            let url = fileURL(for: identifier)
+            try FileManager.default.removeItem(at: url)
+        }
+
+        /// Lists all identifiers (file names without the `.json` extension) of objects currently 
+        /// stored in the directory.
+        ///
+        /// - Returns: An array of strings representing the identifiers of all stored objects.
+        /// - Throws: An error if the list operation fails.
+        func listAllIdentifiers() throws -> [String] {
+            let files = try FileManager.default.contentsOfDirectory(atPath: directory.path)
+            return files
+                .filter { $0.hasPrefix(filePrefix ?? "") }
+                .map { $0
+                    .replacingOccurrences(of: ".json", with: "")
+                    .replacingOccurrences(of: filePrefix ?? "", with: "")
+                }
+        }
+    }
+
+    /// The actor instance managing file operations.
+    private let fileActor: FileActor
 
     /// Initializes a new `JSONFileStorage` instance with an optional file prefix.
     ///
     /// - Parameters:
-    ///   - directory: The directory in which to store JSON files. Defaults to `.documentDirectory`.
-    ///   - filePrefix: An optional prefix to prepend to all file names, ensuring uniqueness
+    ///   - directory: The directory in which to store JSON files. Defaults to 
+    ///   `.documentDirectory`.
+    ///   - filePrefix: An optional prefix to prepend to all file names, ensuring uniqueness 
     ///   and separation.
     internal init(
         directory: FileManager.SearchPathDirectory = .documentDirectory,
         filePrefix: String? = nil
     ) {
-        self.directory = fileManager.urls(for: directory, in: .userDomainMask).first!
+        let dir = FileManager.default.urls(for: directory, in: .userDomainMask).first!
+        self.directory = dir
         self.filePrefix = filePrefix
-    }
-
-    /// Returns the file URL for a given identifier by appending the `.json` extension and an
-    /// optional prefix.
-    ///
-    /// - Parameter identifier: The key used to identify the object.
-    /// - Returns: A URL pointing to the file location in the specified directory.
-    private func fileURL(for identifier: String) -> URL {
-        let prefixedIdentifier = filePrefix.map { "\($0)\(identifier)" } ?? identifier
-        return directory
-            .appendingPathComponent(prefixedIdentifier)
-            .appendingPathExtension("json")
+        self.fileActor = FileActor(directory: dir, filePrefix: filePrefix)
     }
 
     /// Saves an object to the file system as a JSON file with the specified identifier.
     ///
+    /// This method asynchronously saves the provided object to the file system.
+    ///
     /// - Parameters:
-    ///   - object: The object to save. This object must conform to `Codable`.
+    ///   - object: The object to save. This object must conform to `Serializable`.
     ///   - identifier: The key under which the object will be saved.
     /// - Throws: An error if the save operation fails.
     internal func save(_ object: T, with identifier: String) async throws {
-        let data = try JSONEncoder().encode(object)
-        let url = fileURL(for: identifier)
-        try data.write(to: url)
+        try await fileActor.save(object, with: identifier)
     }
 
     /// Loads an object from the file system with the specified identifier.
+    ///
+    /// This method asynchronously retrieves the object associated with the provided identifier 
+    /// from the file system.
     ///
     /// - Parameter identifier: The key of the object to load.
     /// - Returns: The loaded object, or `nil` if no object was found for the given identifier.
     /// - Throws: An error if the load operation fails.
     internal func load(file identifier: String) async throws -> T? {
-        let url = fileURL(for: identifier)
-        guard fileManager.fileExists(atPath: url.path) else {
-            return nil
-        }
-        let data = try Data(contentsOf: url)
-        return try JSONDecoder().decode(T.self, from: data)
+        return try await fileActor.load(file: identifier)
     }
 
     /// Deletes an object from the file system with the specified identifier.
     ///
+    /// This method asynchronously removes the object associated with the provided identifier 
+    /// from the file system.
+    ///
     /// - Parameter identifier: The key of the object to delete.
     /// - Throws: An error if the delete operation fails.
     internal func delete(file identifier: String) async throws {
-        let url = fileURL(for: identifier)
-        try fileManager.removeItem(at: url)
+        try await fileActor.delete(file: identifier)
     }
 
-    /// Lists all identifiers (file names without the `.json` extension) of objects currently
+    /// Lists all identifiers (file names without the `.json` extension) of objects currently 
     /// stored in the directory.
+    ///
+    /// This method asynchronously retrieves all the keys of the objects stored in the directory.
     ///
     /// - Returns: An array of strings representing the identifiers of all stored objects.
     /// - Throws: An error if the list operation fails.
     internal func listAllIdentifiers() async throws -> [String] {
-        let files = try fileManager.contentsOfDirectory(atPath: directory.path)
-        return files
-            .filter { $0.hasPrefix(filePrefix ?? "") }
-            .map { $0
-                .replacingOccurrences(of: ".json", with: "")
-                .replacingOccurrences(of: filePrefix ?? "", with: "")
-            }
+        return try await fileActor.listAllIdentifiers()
     }
 }
+
+extension JSONFileStorage: Sendable {}
