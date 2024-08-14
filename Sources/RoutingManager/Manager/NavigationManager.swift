@@ -28,12 +28,6 @@ public final class NavigationManager<Route> where Route: NavigationRouteRepresen
 
     // MARK: - Public Properties
 
-    /// The current navigation path consisting of routes.
-    ///
-    /// This property holds the active navigation path, allowing you to track the sequence of
-    /// routes the user has navigated through.
-    public var routes: NavigationPath
-
     /// The result of the last navigation operation.
     ///
     /// This property records the outcome of the most recent navigation action, such as pushing
@@ -41,6 +35,12 @@ public final class NavigationManager<Route> where Route: NavigationRouteRepresen
     public private(set) var lastResult: NavigationResult
 
     // MARK: - Internal Properties
+
+    /// The current navigation path consisting of routes.
+    ///
+    /// This property holds the active navigation path, allowing you to track the sequence of
+    /// routes the user has navigated through.
+    internal var routes: NavigationPath
 
     /// A private storage for internal routes used to track the current navigation stack.
     ///

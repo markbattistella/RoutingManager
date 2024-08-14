@@ -94,3 +94,28 @@ extension NavigationError: LocalizedError {
         }
     }
 }
+
+extension NavigationError: Equatable {
+
+    /// Compares two `NavigationError` instances for equality.
+    ///
+    /// This implementation of the equality operator (`==`) checks if two `NavigationError`
+    /// instances are considered equal by comparing their `errorDescription` properties.
+    /// If the descriptions are identical, the errors are deemed to be equivalent, even if
+    /// their underlying causes or associated values differ.
+    ///
+    /// - Parameters:
+    ///   - lhs: A `NavigationError` instance on the left-hand side of the comparison.
+    ///   - rhs: A `NavigationError` instance on the right-hand side of the comparison.
+    ///
+    /// - Returns: A Boolean value indicating whether the two `NavigationError` instances
+    ///   have the same `errorDescription`.
+    ///
+    /// This approach to equality focuses on the user-facing description of the error, ensuring
+    /// that errors are considered equal if they would present the same message to the user.
+    /// This is particularly useful in scenarios where the specific details of the error are
+    /// less important than the message conveyed to the end user or developer.
+    public static func == (lhs: NavigationError, rhs: NavigationError) -> Bool {
+        return lhs.errorDescription == rhs.errorDescription
+    }
+}

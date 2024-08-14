@@ -3,7 +3,11 @@
 
 # RoutingManager
 
-![Licence](https://img.shields.io/badge/Licence-MIT-white?labelColor=blue&style=flat)
+[![Swift Version][Shield1]](https://swiftpackageindex.com/markbattistella/RoutingManager)
+
+[![OS Platforms][Shield2]](https://swiftpackageindex.com/markbattistella/RoutingManager)
+
+[![Licence][Shield3]](https://github.com/markbattistella/RoutingManager/blob/main/LICENSE)
 
 </div>
 
@@ -15,6 +19,7 @@
 - **Persistent Storage:** Save and load navigation paths using in-memory or file system storage.
 - **Custom Storage Support:** Implement your own storage solutions, such as XML or other formats.
 - **Error Handling:** Handle navigation errors with clear and actionable feedback using the `.navigationError` modifier.
+- **Environment Injection:** Inject dependencies directly into your views using `@Environment`.
 
 ## Installation
 
@@ -47,10 +52,18 @@ import RoutingManager
 typealias Routes = RoutingManager<Route>
 
 @main
-struct MyApp: App {
+struct RouteTestApp: App {
   var body: some Scene {
     WindowGroup {
-      NavigationStackWrapper()
+      NavigationWrapper(
+        storage: .inMemory,
+        identifier: "default",
+        for: Route.self
+      ) {
+        // Your first view
+      } environmentInjection: { route in
+        // Environment injection
+      }
     }
   }
 }
@@ -66,21 +79,66 @@ enum Route: String, NavigationRouteRepresentable {
     }
   }
 }
+```
 
-struct NavigationStackWrapper: View {
-  @State private var routeManager: Routes = .init(
-    storage: .inMemory,
-    identifier: "default"
-  )
-  var body: some View {
-    NavigationStack(path: $routeManager.routes) {
-      EntryScreen()
-        .environment(routeManager)
-        .navigationDestination(for: Route.self) { destination in
-          destination.body.environment(routeManager)
-        }
-    }
-  }
+### Initializing `NavigationWrapper`
+
+The `NavigationWrapper` is a key component of the `RoutingManager` package, providing a way to set up and manage your app's navigation flow in a declarative manner. When initializing `NavigationWrapper`, you configure how your navigation stack is managed, stored, and identified within the app.
+
+```swift
+NavigationWrapper(
+  storage: .inMemory,
+  identifier: "default",
+  for: Route.self
+) {
+  // The initial view for the navigation stack
+} environmentInjection: { route in
+  // Inject dependencies or modify the environment for the route's view
+  route.body
+}
+```
+
+#### Parameters
+
+1. `storage: NavigationStorageOption`
+
+   - This parameter defines how the navigation state is stored. The NavigationWrapper supports multiple storage options:
+     - `.inMemory`: Stores the navigation state in memory. This is useful for simple use cases where the navigation state doesn't need to persist across app launches.
+     - `fileSystem(directory:)`: Stores the navigation state in a file, enabling persistence across app sessions. You can specify a file path or use the default location.
+     - Custom storage options can also be implemented by conforming to the `NavigationStorageRepresentable` protocol.
+
+1. `identifier: String`
+
+   - This is a unique identifier for the navigation stack. It allows you to distinguish between different navigation stacks in your app, especially when using persistent storage. For instance, you might have separate stacks for different user flows or sections of your app. The identifier ensures that each stack is managed independently.
+
+1. `for: R.Type`
+
+   - This specifies the type of routes your navigation stack will handle. Typically, this is the enum that conforms to `NavigationRouteRepresentable`, defining all possible routes in your app. By providing the route type, `NavigationWrapper` can manage the navigation between different views based on the routes you define.
+
+1. `content: () -> View`
+
+   - The trailing closure is where you provide the initial view or entry point for your navigation stack. This is the view that users will see when they first launch the app or when the navigation stack is reset. You can structure your navigation flow starting from this view, utilising the routes you've defined.
+
+1. `environmentInjection: (R) -> View`
+
+   - This closure takes a `Route` instance as its parameter, which represents the current route being handled.
+   - Inside this closure, you can modify the environment or inject dependencies that are required by the view associated with the route.
+   - The closure returns a `View`, which is typically the view defined in the `body` property of the route. However, you can wrap this view with additional modifiers or environment objects as needed.
+
+#### When to Use `environmentInjection`:
+
+- **Dependency Injection:** If your views need access to specific environment objects, you can inject them here. For instance, you might inject a data model or a service object that the view needs to function properly.
+
+- **Dynamic Modifications:** If certain views require dynamic modifications based on the route, you can apply those changes in this closure. This allows for greater flexibility and reuse of views.
+
+##### Example Scenario
+
+Imagine you have a route that requires access to a user profile object, which is stored in an environment. You could inject this dependency directly through the `environmentInjection` closure:
+
+```swift
+environmentInjection: { route in
+  route.body
+    .environmentObject(UserProfile())
 }
 ```
 
@@ -197,112 +255,6 @@ routeManager.push(to: .home)
   }
 ```
 
-### Full Example
-
-Here’s a full example demonstrating the use of `RoutingManager` with file storage persistence:
-
-```swift
-import SwiftUI
-import RoutingManager
-
-@main
-struct MyApp: App {
-  var body: some Scene {
-    WindowGroup {
-      NavigationStackWrapper()
-    }
-  }
-}
-
-enum Route: String, NavigationRouteRepresentable {
-  case home
-  case settings
-  case profile
-  var id: String { rawValue }
-  var body: some View {
-    switch self {
-      case .home: HomeView()
-      case .settings: SettingsView()
-      case .profile: ProfileView()
-    }
-  }
-}
-
-struct NavigationStackWrapper: View {
-  @State private var routeManager: Routes = .init(
-    storage: .fileSystem(directory: .documentDirectory),
-    identifier: "default"
-  )
-  var body: some View {
-    NavigationStack(path: $routeManager.routes) {
-      EntryScreen()
-        .environment(routeManager)
-        .navigationDestination(for: Route.self) { destination in
-          destination.body.environment(routeManager)
-        }
-    }
-  }
-}
-
-struct EntryScreen: View {
-  @Environment(Routes.self) private var routeManager
-  var body: some View {
-    VStack {
-      Button("Open Home") {
-        routeManager.push(to: .home)
-      }
-      Button("Save Current Route") {
-        routeManager.saveRouteStack(for: PathIdentifier(label: "Entry Route"))
-      }
-      Button("Load Saved Route") {
-        Task {
-          if let customID = try? await routeManager.getPathIdentifier(for: "Entry Route") {
-            await routeManager.load(with: customID)
-          }
-        }
-      }
-    }
-    .padding()
-  }
-}
-
-struct HomeView: View {
-  @Environment(Routes.self) private var routeManager
-  var body: some View {
-    Button("Open Settings") {
-      routeManager.push(to: .settings)
-    }
-  }
-}
-
-struct SettingsView: View {
-  @Environment(Routes.self) private var routeManager
-  var body: some View {
-    VStack {
-      Button("Open Profile") {
-        routeManager.push(to: .profile)
-      }
-      Button("Go Back") {
-        routeManager.goBack()
-      }
-      Button("Reset Navigation") {
-        routeManager.resetNavigation()
-      }
-    }
-    .padding()
-  }
-}
-
-struct ProfileView: View {
-  @Environment(Routes.self) private var routeManager
-  var body: some View {
-    Button("Back to Home") {
-      routeManager.goBack()
-    }
-  }
-}
-```
-
 ## Conclusion
 
 `RoutingManager` is a powerful tool for managing complex navigation flows in SwiftUI applications. With support for persistent storage, custom storage solutions, and robust error handling, it provides a flexible and maintainable way to handle navigation in your app.
@@ -314,3 +266,9 @@ Contributions are welcome! If you have suggestions or improvements, please fork 
 ## License
 
 `RoutingManager` is released under the MIT license. See [LICENSE](https://github.com/markbattistella/RoutingManager/blob/main/LICENSE) for details.
+
+[Shield1]: https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fmarkbattistella%2FRoutingManager%2Fbadge%3Ftype%3Dswift-versions
+
+[Shield2]: https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fmarkbattistella%2FRoutingManager%2Fbadge%3Ftype%3Dplatforms
+
+[Shield3]: https://img.shields.io/badge/Licence-MIT-white?labelColor=blue&style=flat
