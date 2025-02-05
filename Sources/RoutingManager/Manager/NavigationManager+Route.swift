@@ -10,53 +10,42 @@ extension NavigationManager: NavigationRouteDeletgate {
 
     /// Pushes one or more screens onto the navigation stack.
     ///
-    /// - Parameter screens: The route(s) representing the screen(s) to be pushed.
-    /// - Returns: A `NavigationResult` indicating the success or failure of the operation.
-    /// - Throws: An error if the save operation fails.
+    /// - Parameter screens: The screens to be pushed onto the stack.
+    /// - Returns: A `NavigationResult` indicating success or failure of the operation.
     @discardableResult
-    public func push(
-        to screens: Route...
-    ) async throws -> NavigationResult {
+    public func push(to screens: Route...) -> NavigationResult {
         navigationState[stack, default: []].append(contentsOf: screens)
-        return await performSaveOperation(
+        return performSaveOperation(
             "Pushing \(screens.count) screen(s) onto navigation stack '\(stack.id)'."
         )
     }
 
     /// Navigates back by a specified number of screens.
     ///
-    /// - Parameter numberOfScreens: The number of screens to go back.
-    /// - Returns: A `NavigationResult` indicating the success or failure of the operation.
-    /// - Throws: An error if the save operation fails.
+    /// - Parameter numberOfScreens: The number of screens to navigate back.
+    /// - Returns: A `NavigationResult` indicating success or failure of the operation.
     @discardableResult
-    public func goBack(
-        _ numberOfScreens: Int
-    ) async throws -> NavigationResult {
+    public func goBack(_ numberOfScreens: Int) -> NavigationResult {
         guard let routes = navigationState[stack], !routes.isEmpty else {
-            logger.warning(
-                "Cannot go back. Navigation stack '\(self.stack.id)' is already empty."
-            )
+            logger.warning("Cannot go back. Navigation stack '\(self.stack.id)' is already empty.")
             return .failure(.pathNotFound)
         }
         let removedScreens = min(numberOfScreens, routes.count)
         navigationState[stack]?.removeLast(removedScreens)
-        return await performSaveOperation(
+        return performSaveOperation(
             "Going back \(removedScreens) screen(s) in navigation stack '\(stack.id)'."
         )
     }
 
-    /// Navigates to the first or last occurrence of a specific screen within the stack.
+    /// Navigates to a specific occurrence of a screen in the navigation stack.
     ///
     /// - Parameters:
-    ///   - screen: The route representing the screen to find.
-    ///   - direction: The direction in which to search for the occurrence.
-    /// - Returns: A `NavigationResult` indicating the success or failure of the operation.
-    /// - Throws: An error if the save operation fails.
+    ///   - screen: The screen to navigate to.
+    ///   - direction: The direction to search for the occurrence (`first` or `last`).
+    /// - Returns: A `NavigationResult` indicating success or failure of the operation.
     @discardableResult
-    public func goToOccurrence(
-        of screen: Route,
-        direction: OccurrenceDirection
-    ) async throws -> NavigationResult {
+    public func goToOccurrence(of screen: Route, direction: OccurrenceDirection) -> NavigationResult
+    {
         guard let routes = navigationState[stack], !routes.isEmpty else {
             logger.warning(
                 "Navigation stack '\(self.stack.id)' is empty. Cannot find screen '\(screen.id)'."
@@ -75,20 +64,17 @@ extension NavigationManager: NavigationRouteDeletgate {
         }
 
         navigationState[stack] = Array(routes.prefix(index + 1))
-        return await performSaveOperation(
+        return performSaveOperation(
             "Navigating to \(direction.rawValue) occurrence of screen '\(screen.id)' at index \(index) in stack '\(stack.id)'."
         )
     }
 
     /// Replaces the current screen with a new screen.
     ///
-    /// - Parameter screen: The route representing the new screen to replace the current one.
-    /// - Returns: A `NavigationResult` indicating the success or failure of the operation.
-    /// - Throws: An error if the save operation fails.
+    /// - Parameter screen: The screen to replace the current screen with.
+    /// - Returns: A `NavigationResult` indicating success or failure of the operation.
     @discardableResult
-    public func replaceCurrentScreen(
-        with screen: Route
-    ) async throws -> NavigationResult {
+    public func replaceCurrentScreen(with screen: Route) -> NavigationResult {
         guard var routes = navigationState[stack], !routes.isEmpty else {
             logger.warning(
                 "Navigation stack '\(self.stack.id)' is empty. Cannot replace the current screen."
@@ -99,35 +85,29 @@ extension NavigationManager: NavigationRouteDeletgate {
         routes.removeLast()
         routes.append(screen)
         navigationState[stack] = routes
-        return await performSaveOperation(
+        return performSaveOperation(
             "Replaced screen '\(previousScreen?.id ?? "unknown")' with '\(screen.id)' in navigation stack '\(self.stack.id)'."
         )
     }
 
-    /// Replaces the entire current navigation stack with a new set of screens.
+    /// Replaces the entire navigation stack with a new sequence of screens.
     ///
-    /// - Parameter routes: The routes representing the new stack.
-    /// - Returns: A `NavigationResult` indicating the success or failure of the operation.
-    /// - Throws: An error if the save operation fails.
+    /// - Parameter routes: The new stack of screens to replace the current stack.
+    /// - Returns: A `NavigationResult` indicating success or failure of the operation.
     @discardableResult
-    public func replaceCurrentStack(
-        with routes: Route...
-    ) async throws -> NavigationResult {
+    public func replaceCurrentStack(with routes: Route...) -> NavigationResult {
         navigationState[stack] = routes
-        return await performSaveOperation(
+        return performSaveOperation(
             "Replacing entire navigation stack '\(self.stack.id)' with \(routes.count) new route(s)."
         )
     }
 
-    /// Resets the navigation stack, clearing all existing routes.
+    /// Resets the navigation stack, removing all screens.
     ///
-    /// - Returns: A `NavigationResult` indicating the success or failure of the operation.
-    /// - Throws: An error if the save operation fails.
+    /// - Returns: A `NavigationResult` indicating success or failure of the operation.
     @discardableResult
-    public func resetNavigation() async throws -> NavigationResult {
+    public func resetNavigation() -> NavigationResult {
         navigationState[stack] = []
-        return await performSaveOperation(
-            "Resetting navigation stack '\(self.stack.id)'."
-        )
+        return performSaveOperation("Resetting navigation stack '\(self.stack.id)'.")
     }
 }

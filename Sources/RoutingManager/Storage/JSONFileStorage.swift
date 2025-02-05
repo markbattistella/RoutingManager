@@ -6,40 +6,40 @@
 
 import Foundation
 
-/// A concrete implementation of `FileStorageRepresentable` that persists data as a JSON file.
+/// A file storage implementation that saves and loads data in JSON format.
 ///
-/// This struct provides methods to save, load, and delete `Codable` objects from a file stored
-/// in the user's document directory.
-public struct JSONFileStorage<T: Codable>: FileStorageRepresentable {
+/// `JSONFileStorage` conforms to `FileStorageRepresentable` and provides methods for persisting,
+/// retrieving, and deleting `Codable` objects from a file in the user's document directory.
+internal struct JSONFileStorage<T: Codable>: FileStorageRepresentable {
 
     /// The file URL where the JSON data is stored.
     private let fileURL: URL
 
-    /// Initializes a `JSONFileStorage` instance with an optional file name.
+    /// Initializes a new `JSONFileStorage` instance with a specified file name.
     ///
-    /// - Parameter fileName: The name of the JSON file to be used for storage.
-    ///   Defaults to `"NavigationState.json"`.
-    public init(fileName: String = "NavigationState.json") {
+    /// - Parameter fileName: The name of the file where data will be stored. Defaults to
+    /// "NavigationState.json"`.
+    internal init(fileName: String = "NavigationState.json") {
         let directory = FileManager.default
             .urls(for: .documentDirectory, in: .userDomainMask)
             .first!
         self.fileURL = directory.appendingPathComponent(fileName)
     }
 
-    /// Saves an object to a JSON file.
+    /// Saves an object to the file in JSON format.
     ///
-    /// - Parameter object: The `Codable` object to be saved.
-    /// - Throws: An error if encoding the object or writing to the file fails.
-    public func save(_ object: T) async throws {
+    /// - Parameter object: The object to be encoded and saved.
+    /// - Throws: An error if encoding fails or if the file cannot be written.
+    internal func save(_ object: T) throws {
         let data = try JSONEncoder().encode(object)
         try data.write(to: fileURL, options: .atomic)
     }
 
-    /// Loads an object from the JSON file.
+    /// Loads an object from the file if it exists.
     ///
-    /// - Returns: The decoded object if the file exists, otherwise `nil`.
+    /// - Returns: The decoded object if the file exists and is valid, otherwise `nil`.
     /// - Throws: A `NavigationError.load` error if decoding fails.
-    public func load() async throws -> T? {
+    internal func load() throws -> T? {
         guard FileManager.default.fileExists(atPath: fileURL.path) else { return nil }
         let data = try Data(contentsOf: fileURL)
         do {
@@ -49,10 +49,10 @@ public struct JSONFileStorage<T: Codable>: FileStorageRepresentable {
         }
     }
 
-    /// Deletes the JSON file from storage.
+    /// Deletes the stored file if it exists.
     ///
-    /// - Throws: An error if the deletion operation fails.
-    public func delete() async throws {
+    /// - Throws: An error if the file cannot be deleted.
+    internal func delete() throws {
         guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
         try FileManager.default.removeItem(at: fileURL)
     }

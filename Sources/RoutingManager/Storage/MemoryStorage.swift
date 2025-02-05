@@ -6,30 +6,38 @@
 
 import Foundation
 
-/// A lightweight, in-memory storage solution conforming to `FileStorageRepresentable`.
+/// An in-memory storage implementation for temporary data persistence.
 ///
-/// This class stores `Codable` objects in memory rather than persisting them to disk.
-/// It is useful for temporary data storage during runtime.
-///
-/// - Note: Since this storage is memory-based, data is lost when the application terminates.
-public final class MemoryStorage<T: Codable>: FileStorageRepresentable {
+/// `MemoryStorage` conforms to `FileStorageRepresentable` and provides methods for saving,
+/// loading, and deleting `Codable` objects, storing them in memory.
+internal final class MemoryStorage<T: Codable>: FileStorageRepresentable {
 
     /// The in-memory storage for the object.
     private var storage: T?
 
-    /// Initializes an empty memory storage instance.
-    public init() {}
+    /// Initializes a new `MemoryStorage` instance.
+    internal init() {}
 
-    /// Saves an object in memory.
+    /// Saves an object to in-memory storage.
     ///
-    /// - Parameter object: The `Codable` object to be stored.
-    public func save(_ object: T) async throws { storage = object }
+    /// - Parameter object: The object to be stored.
+    /// - Throws: No errors are thrown in this implementation.
+    internal func save(_ object: T) throws {
+        storage = object
+    }
 
-    /// Loads the stored object from memory.
+    /// Loads an object from in-memory storage.
     ///
     /// - Returns: The stored object if available, otherwise `nil`.
-    public func load() async throws -> T? { return storage }
+    /// - Throws: No errors are thrown in this implementation.
+    internal func load() throws -> T? {
+        return storage
+    }
 
     /// Deletes the stored object from memory.
-    public func delete() async throws { storage = nil }
+    ///
+    /// - Throws: No errors are thrown in this implementation.
+    internal func delete() throws {
+        storage = nil
+    }
 }

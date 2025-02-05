@@ -6,47 +6,33 @@
 
 import SwiftUI
 
-/// A SwiftUI wrapper for handling navigation within a structured navigation system.
+/// A SwiftUI wrapper that manages navigation using `NavigationStack`.
 ///
-/// `NavigationWrapper` integrates `NavigationManager` to provide navigation management with
-/// support for dependency injection, persistent or in-memory storage, and SwiftUI's
-/// `NavigationStack`.
-///
-/// - Parameters:
-///   - `Route`: A type conforming to `NavigationRouteRepresentable`, representing individual
-///   navigation destinations.
-///   - `Stack`: A type conforming to `NavigationStackRepresentable`, representing different
-///   navigation stacks.
-///   - `Content`: The root view content wrapped within the navigation system.
+/// `NavigationWrapper` integrates `NavigationManager` to handle navigation state while providing
+/// a way to inject environment values into destination views.
 public struct NavigationWrapper<Route, Stack, Content>: View
 where Route: NavigationRouteRepresentable, Stack: NavigationStackRepresentable, Content: View {
 
-    /// A typealias for the navigation manager that handles route management.
+    /// A type alias for `NavigationManager`, which handles navigation logic.
     public typealias RouteManager = NavigationManager<Stack, Route>
 
-    /// The state object managing the navigation system.
+    /// The navigation manager instance responsible for tracking navigation state.
     @State internal var routeManager: RouteManager
 
-    /// The root content view of the navigation wrapper.
+    /// The root content of the navigation stack.
     private let content: () -> Content
 
-    /// A closure that provides dependency injection for routes.
-    ///
-    /// If provided, this closure wraps each `Route` into an `AnyView` for further customization.
+    /// An optional closure for injecting environment values into destination views.
     private let environmentInjection: ((Route) -> AnyView)?
 
-    /// Initializes the `NavigationWrapper` with a storage mode, a navigation stack, and optional
-    /// dependency injection.
+    /// Initializes a `NavigationWrapper` with a specified storage mode, stack, and content.
     ///
     /// - Parameters:
-    ///   - storage: The storage mode for managing navigation state.
-    ///   - stack: The navigation stack associated with this wrapper.
-    ///   - routeType: The type of navigation route being managed.
-    ///   - content: A `ViewBuilder` closure that defines the main content of the navigation
-    ///   system.
-    ///   - environmentInjection: An optional closure that provides dependency injection for a
-    ///   given `Route`. If provided, the injected view is wrapped in `AnyView` and used instead
-    ///   of the default route body.
+    ///   - storage: The storage mode for persisting navigation state (defaults to `.memory`).
+    ///   - stack: The navigation stack that this wrapper manages.
+    ///   - routeType: The type of routes managed by the navigation system.
+    ///   - content: A view builder closure that defines the root content of the navigation stack.
+    ///   - environmentInjection: An optional closure that provides custom environment values to destinations.
     public init<Destination: View>(
         storage: RouteManager.StorageMode = .memory,
         stack: Stack,
@@ -64,8 +50,10 @@ where Route: NavigationRouteRepresentable, Stack: NavigationStackRepresentable, 
         }
     }
 
-    /// The body of the navigation wrapper, providing a `NavigationStack` and managing
-    /// navigation state.
+    /// The body of the `NavigationWrapper`, which provides a `NavigationStack` for managing navigation.
+    ///
+    /// This view observes `routeManager` to dynamically update the navigation stack. It also supports
+    /// injecting environment values into destination views when provided.
     public var body: some View {
         NavigationStack(
             path: Binding<[Route]>(

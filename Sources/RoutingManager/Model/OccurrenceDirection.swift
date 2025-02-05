@@ -6,12 +6,16 @@
 
 import Foundation
 
-/// Defines the direction in which to search for an occurrence of a navigation route.
+/// An enumeration representing the direction in which to search for an occurrence of a navigation
+/// route.
+///
+/// `OccurrenceDirection` is used when navigating to a specific occurrence of a screen
+/// in the navigation stack, such as the first or last instance.
 public enum OccurrenceDirection: String {
 
-    /// Represents the first occurrence of a route in the navigation stack.
+    /// The first occurrence of the specified screen in the navigation stack.
     case first
 
-    /// Represents the last occurrence of a route in the navigation stack.
+    /// The last occurrence of the specified screen in the navigation stack.
     case last
 }
