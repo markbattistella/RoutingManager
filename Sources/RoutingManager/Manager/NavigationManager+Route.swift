@@ -64,7 +64,8 @@ extension NavigationManager: NavigationRouteDeletgate {
             return .failure(.pathNotFound)
         }
 
-        let index = (direction == .first)
+        let index =
+            (direction == .first)
             ? routes.firstIndex(where: { $0.id == screen.id })
             : routes.lastIndex(where: { $0.id == screen.id })
 

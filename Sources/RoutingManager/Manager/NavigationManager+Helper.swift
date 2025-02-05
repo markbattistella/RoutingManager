@@ -7,7 +7,7 @@
 import Foundation
 
 extension NavigationManager {
-    
+
     /// Performs a save operation on the navigation state and logs the action.
     ///
     /// This method attempts to save the current navigation state asynchronously and logs the result.

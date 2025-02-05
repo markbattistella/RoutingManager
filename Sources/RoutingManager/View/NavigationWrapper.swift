@@ -18,7 +18,8 @@ import SwiftUI
 ///   - `Stack`: A type conforming to `NavigationStackRepresentable`, representing different
 ///   navigation stacks.
 ///   - `Content`: The root view content wrapped within the navigation system.
-public struct NavigationWrapper<Route, Stack, Content>: View where Route: NavigationRouteRepresentable, Stack: NavigationStackRepresentable, Content: View {
+public struct NavigationWrapper<Route, Stack, Content>: View
+where Route: NavigationRouteRepresentable, Stack: NavigationStackRepresentable, Content: View {
 
     /// A typealias for the navigation manager that handles route management.
     public typealias RouteManager = NavigationManager<Stack, Route>
@@ -62,14 +63,16 @@ public struct NavigationWrapper<Route, Stack, Content>: View where Route: Naviga
             { route in AnyView(injection(route)) }
         }
     }
-    
+
     /// The body of the navigation wrapper, providing a `NavigationStack` and managing
     /// navigation state.
     public var body: some View {
-        NavigationStack(path: Binding<[Route]>(
-            get: { routeManager.navigationState[routeManager.stack] ?? [] },
-            set: { routeManager.navigationState[routeManager.stack] = $0 }
-        )) {
+        NavigationStack(
+            path: Binding<[Route]>(
+                get: { routeManager.navigationState[routeManager.stack] ?? [] },
+                set: { routeManager.navigationState[routeManager.stack] = $0 }
+            )
+        ) {
             content()
                 .environment(routeManager)
                 .navigationDestination(for: Route.self) { destination in
