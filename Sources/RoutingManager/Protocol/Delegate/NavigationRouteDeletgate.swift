@@ -48,12 +48,23 @@ internal protocol NavigationRouteDeletgate {
     @discardableResult
     func replaceCurrentScreen(with screen: Route) -> NavigationResult
 
-    /// Replaces the entire navigation stack with a new sequence of screens.
+    /// Replaces the selected navigation stack with a new sequence of screens.
     ///
-    /// - Parameter routes: The new stack of screens to replace the current stack.
+    /// - Parameters:
+    ///   - stack: The stack to replace with the new screens.
+    ///   - routes: The new stack of screens to replace with.
+    /// - Returns: A `NavigationResult` indicating the success or failure of the operation.
+    /// - Note: `routes` is an array opposed to variadic array since there is no Swift splatting
+    /// method at present.
+    @discardableResult
+    func replace(stack: Stack, with routes: [Route]) -> NavigationResult
+
+    /// Overrides the entire stored stack with a new set of stacks and routes.
+    ///
+    /// - Parameter navigation: The new stack and routes to replace with.
     /// - Returns: A `NavigationResult` indicating the success or failure of the operation.
     @discardableResult
-    func replaceCurrentStack(with routes: Route...) -> NavigationResult
+    func override(navigation: [Stack: [Route]]) -> NavigationResult
 
     /// Resets the navigation stack, removing all screens and starting fresh.
     ///

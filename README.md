@@ -164,9 +164,11 @@ environmentInjection: { route in
 |-------------|---------------|-----------|
 | `push(to screens: Route...) -> NavigationResult` | Pushes one or more screens onto the navigation stack. | `push(to: homeScreen, detailsScreen)` |
 | `goBack(_ numberOfScreens: Int) -> NavigationResult` | Navigates back by a specified number of screens. | `goBack(2)` |
-| `goToOccurrence(of screen: Route, direction: OccurrenceDirection) -> NavigationResult` | Navigates to a specific occurrence of a screen in the navigation stack, based on direction. | `goToOccurrence(of: profileScreen, direction: .backward)` |
+| `goToOccurrence(of screen: Route, direction: OccurrenceDirection) -> NavigationResult` | Navigates to a specific occurrence of a screen in the navigation stack, based on direction. | `goToOccurrence(of: profileScreen, direction: .first)` |
 | `replaceCurrentScreen(with screen: Route) -> NavigationResult` | Replaces the current screen with a new screen. | `replaceCurrentScreen(with: settingsScreen)` |
-| `replaceCurrentStack(with routes: Route...) -> NavigationResult` | Replaces the entire navigation stack with a new sequence of screens. | `replaceCurrentStack(with: homeScreen, profileScreen, settingsScreen)` |
+| `replace(stack: Stack, with routes: [Route]) -> NavigationResult` | Replaces a specific navigation stack with a new sequence of screens, while keeping other stacks unchanged. | `replace(stack: .productStack, with: homeScreen, productsScreen, itemScreen)` |
+| `replaceCurrentStack(with routes: [Route]) -> NavigationResult` | Replaces the entire navigation stack associated with this manager with a new sequence of screens. | `replaceCurrentStack(with: homeScreen, profileScreen, settingsScreen)` |
+| `override(navigation: [Stack: [Route]]) -> NavigationResult` | Overrides the entire stored navigation state with a new dictionary of stacks and routes. This completely replaces all stacks and routes. | `override(navigation: [.main: [homeScreen, cartScreen], .auth: [loginScreen]])` |
 | `resetNavigation() -> NavigationResult` | Resets the navigation stack, removing all screens. | `resetNavigation()` |
 
 ### Navigation stack methods

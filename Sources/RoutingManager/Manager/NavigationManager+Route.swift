@@ -90,15 +90,51 @@ extension NavigationManager: NavigationRouteDeletgate {
         )
     }
 
-    /// Replaces the entire navigation stack with a new sequence of screens.
+    /// Replaces the specified navigation stack with a new sequence of routes.
     ///
-    /// - Parameter routes: The new stack of screens to replace the current stack.
-    /// - Returns: A `NavigationResult` indicating success or failure of the operation.
+    /// This method updates a single stack while keeping the other stacks unchanged. It is useful
+    /// when you need to modify a specific navigation stack without affecting the global navigation
+    /// state.
+    ///
+    /// - Parameters:
+    ///   - stack: The navigation stack to replace.
+    ///   - routes: The new sequence of routes to be set in the specified stack.
+    /// - Returns: A `NavigationResult` indicating the success or failure of the operation.
     @discardableResult
-    public func replaceCurrentStack(with routes: Route...) -> NavigationResult {
+    func replace(stack: Stack, with routes: [Route]) -> NavigationResult {
         navigationState[stack] = routes
         return performSaveOperation(
-            "Replacing entire navigation stack '\(self.stack.id)' with \(routes.count) new route(s)."
+            "Replacing entire navigation stack '\(stack.id)' with \(routes.count) new route(s)."
+        )
+    }
+
+    /// Replaces the current stack associated with this navigation manager with a new sequence of
+    /// routes.
+    ///
+    /// This method is a convenience function that replaces the navigation stack that the manager
+    /// was initialized with, without requiring explicit reference to the stack itself.
+    ///
+    /// - Parameter routes: The new sequence of routes to replace the current stack.
+    /// - Returns: A `NavigationResult` indicating the success or failure of the operation.
+    @discardableResult
+    func replaceCurrentStack(with routes: [Route]) -> NavigationResult {
+        return replace(stack: stack, with: routes)
+    }
+
+    /// Overrides the entire navigation state with a new set of stacks and routes.
+    ///
+    /// This method completely replaces all existing navigation stacks and their associated routes
+    /// with the provided navigation state. It is useful for resetting the navigation state entirely
+    /// based on external events such as a remote push notification or a scheduled update.
+    ///
+    /// - Parameter navigation: A dictionary representing the new navigation state, where keys are
+    /// stacks and values are arrays of routes.
+    /// - Returns: A `NavigationResult` indicating the success or failure of the operation.
+    @discardableResult
+    func override(navigation: [Stack: [Route]]) -> NavigationResult {
+        navigationState = navigation
+        return performSaveOperation(
+            "Overrode navigation state with new navigation data."
         )
     }
 
