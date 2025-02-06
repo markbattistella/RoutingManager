@@ -18,12 +18,13 @@ let package = Package(
             targets: ["RoutingManager"]
         )
     ],
-    dependencies: [],
+    dependencies: [
+        .package(url: "https://github.com/markbattistella/SimpleLogger", from: .init(1, 0, 0))
+    ],
     targets: [
         .target(
             name: "RoutingManager",
-            dependencies: [],
-            exclude: [],
+            dependencies: ["SimpleLogger"],
             swiftSettings: [
                 .enableExperimentalFeature("StrictConcurrency")
             ]
