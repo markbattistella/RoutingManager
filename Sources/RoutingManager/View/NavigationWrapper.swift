@@ -8,31 +8,39 @@ import SwiftUI
 
 /// A SwiftUI wrapper that manages navigation using `NavigationStack`.
 ///
-/// `NavigationWrapper` integrates `NavigationManager` to handle navigation state while providing
-/// a way to inject environment values into destination views.
+/// `NavigationWrapper` integrates a `NavigationManager` to handle the navigation state for a
+/// given stack and route type. It automatically persists navigation state and optionally
+/// injects environment values into destination views.
+///
+/// - Note: State persistence behaviour is determined by the `storage` mode specified at
+/// initialisation.
 public struct NavigationWrapper<Route, Stack, Content>: View
 where Route: NavigationRouteRepresentable, Stack: NavigationStackRepresentable, Content: View {
 
-    /// A type alias for `NavigationManager`, which handles navigation logic.
+    /// A type alias for the underlying navigation manager.
     public typealias RouteManager = NavigationManager<Stack, Route>
 
-    /// The navigation manager instance responsible for tracking navigation state.
+    /// The navigation manager instance responsible for tracking and persisting navigation state.
     @State internal var routeManager: RouteManager
 
-    /// The root content of the navigation stack.
+    /// The root view content of the navigation stack.
     private let content: () -> Content
 
     /// An optional closure for injecting environment values into destination views.
+    ///
+    /// This closure is called for each pushed `Route` and should return
+    /// the view that will be presented for that route.
     private let environmentInjection: ((Route) -> AnyView)?
 
-    /// Initializes a `NavigationWrapper` with a specified storage mode, stack, and content.
+    /// Creates a `NavigationWrapper` for managing navigation state and presenting a `NavigationStack`.
     ///
     /// - Parameters:
-    ///   - storage: The storage mode for persisting navigation state (defaults to `.memory`).
-    ///   - stack: The navigation stack that this wrapper manages.
-    ///   - routeType: The type of routes managed by the navigation system.
-    ///   - content: A view builder closure that defines the root content of the navigation stack.
-    ///   - environmentInjection: An optional closure that provides custom environment values to destinations.
+    ///   - storage: The storage mode used to persist navigation state (defaults to `.memory`).
+    ///   - stack: The navigation stack type to be managed.
+    ///   - routeType: The type of routes handled by the navigation system.
+    ///   - content: A view builder that produces the root content of the navigation stack.
+    ///   - environmentInjection: An optional closure to provide custom environment values
+    ///     for each destination view.
     public init<Destination: View>(
         storage: RouteManager.StorageMode = .memory,
         stack: Stack,
@@ -50,28 +58,46 @@ where Route: NavigationRouteRepresentable, Stack: NavigationStackRepresentable, 
         }
     }
 
-    /// The body of the `NavigationWrapper`, which provides a `NavigationStack` for managing navigation.
+    /// The content and navigation logic for the wrapper.
     ///
-    /// This view observes `routeManager` to dynamically update the navigation stack. It also supports
-    /// injecting environment values into destination views when provided.
+    /// Presents a `NavigationStack` bound to the `routeManager`'s current path.
+    /// All route changes triggered by user interaction are persisted automatically.
     public var body: some View {
-        NavigationStack(
-            path: Binding<[Route]>(
-                get: { routeManager.navigationState[routeManager.stack] ?? [] },
-                set: { routeManager.navigationState[routeManager.stack] = $0 }
-            )
-        ) {
+        NavigationStack(path: routeManager.pathBinding) {
             content()
                 .environment(routeManager)
                 .navigationDestination(for: Route.self) { destination in
                     if let inject = environmentInjection {
-                        inject(destination)
-                            .environment(routeManager)
+                        inject(destination).environment(routeManager)
                     } else {
-                        destination.body
-                            .environment(routeManager)
+                        destination.body.environment(routeManager)
                     }
                 }
         }
+    }
+}
+
+@MainActor
+extension NavigationManager {
+
+    /// A binding to the current stack's path.
+    ///
+    /// This binding synchronises the `NavigationStack` path with the `navigationState` for the
+    /// active stack.
+    /// - On update, the new path is stored in `navigationState`.
+    /// - If the path becomes empty, the stack entry is removed from state.
+    /// - All updates trigger a save to the configured storage.
+    fileprivate var pathBinding: Binding<[Route]> {
+        Binding<[Route]>(
+            get: { self.navigationState[self.stack] ?? [] },
+            set: { newValue in
+                if newValue.isEmpty {
+                    self.navigationState.removeValue(forKey: self.stack)
+                } else {
+                    self.navigationState[self.stack] = newValue
+                }
+                _ = self.performSaveOperation("Path changed via UI")
+            }
+        )
     }
 }
