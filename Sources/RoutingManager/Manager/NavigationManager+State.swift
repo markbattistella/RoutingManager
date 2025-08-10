@@ -32,9 +32,7 @@ extension NavigationManager: NavigationStateDelegate {
     @discardableResult
     public func load() -> NavigationResult {
         guard let storage else {
-            logger.warning(
-                "No storage available. Load operation is considered successful by default."
-            )
+            logger.warning("No storage available. Load operation is considered successful by default.")
             return .success
         }
         do {
@@ -51,19 +49,25 @@ extension NavigationManager: NavigationStateDelegate {
         }
     }
 
-    /// Saves the current navigation state to storage, if available.
+    /// Persists the current navigation state to the configured storage.
     ///
-    /// - Returns: A `NavigationResult` indicating success or failure of the save operation.
+    /// If `navigationState` is empty, the storage file is deleted instead of saved. If no storage
+    /// is configured, the operation is considered successful.
+    ///
+    /// - Returns: A `NavigationResult` indicating whether the save or delete operation succeeded.
     @discardableResult
     internal func save() -> NavigationResult {
         guard let storage else {
-            logger.warning(
-                "No storage available. Save operation is considered successful by default."
-            )
+            logger.warning("No storage available. Save operation is considered successful by default.")
             return .success
         }
+
         do {
-            try storage.save(navigationState)
+            if navigationState.isEmpty {
+                try storage.delete()
+            } else {
+                try storage.save(navigationState)
+            }
             return .success
         } catch {
             return .failure(.save(error))

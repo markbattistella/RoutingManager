@@ -66,7 +66,8 @@ where Stack: NavigationStackRepresentable, Route: NavigationRouteRepresentable {
 
         /// A custom storage implementation is used.
         ///
-        /// - Parameter customStorage: A `FileStorage` instance handling the custom storage mechanism.
+        /// - Parameter customStorage: A `FileStorage` instance handling the custom storage
+        /// mechanism.
         case custom(FileStorage<[Stack: [Route]]>)
     }
 }

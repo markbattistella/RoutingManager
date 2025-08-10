@@ -15,9 +15,7 @@ extension NavigationManager: NavigationRouteDeletgate {
     @discardableResult
     public func push(to screens: Route...) -> NavigationResult {
         navigationState[stack, default: []].append(contentsOf: screens)
-        return performSaveOperation(
-            "Pushing \(screens.count) screen(s) onto navigation stack '\(stack.id)'."
-        )
+        return performSaveOperation("Pushing \(screens.count) screen(s) onto navigation stack '\(stack.id)'.")
     }
 
     /// Navigates back by a specified number of screens.
@@ -32,9 +30,7 @@ extension NavigationManager: NavigationRouteDeletgate {
         }
         let removedScreens = min(numberOfScreens, routes.count)
         navigationState[stack]?.removeLast(removedScreens)
-        return performSaveOperation(
-            "Going back \(removedScreens) screen(s) in navigation stack '\(stack.id)'."
-        )
+        return performSaveOperation("Going back \(removedScreens) screen(s) in navigation stack '\(stack.id)'.")
     }
 
     /// Navigates to a specific occurrence of a screen in the navigation stack.
@@ -44,12 +40,9 @@ extension NavigationManager: NavigationRouteDeletgate {
     ///   - direction: The direction to search for the occurrence (`first` or `last`).
     /// - Returns: A `NavigationResult` indicating success or failure of the operation.
     @discardableResult
-    public func goToOccurrence(of screen: Route, direction: OccurrenceDirection) -> NavigationResult
-    {
+    public func goToOccurrence(of screen: Route, direction: OccurrenceDirection) -> NavigationResult {
         guard let routes = navigationState[stack], !routes.isEmpty else {
-            logger.warning(
-                "Navigation stack '\(self.stack.id)' is empty. Cannot find screen '\(screen.id)'."
-            )
+            logger.warning("Navigation stack '\(self.stack.id)' is empty. Cannot find screen '\(screen.id)'.")
             return .failure(.pathNotFound)
         }
 
@@ -64,9 +57,7 @@ extension NavigationManager: NavigationRouteDeletgate {
         }
 
         navigationState[stack] = Array(routes.prefix(index + 1))
-        return performSaveOperation(
-            "Navigating to \(direction.rawValue) occurrence of screen '\(screen.id)' at index \(index) in stack '\(stack.id)'."
-        )
+        return performSaveOperation("Navigating to \(direction.rawValue) occurrence of screen '\(screen.id)' at index \(index) in stack '\(stack.id)'.")
     }
 
     /// Replaces the current screen with a new screen.
@@ -76,18 +67,14 @@ extension NavigationManager: NavigationRouteDeletgate {
     @discardableResult
     public func replaceCurrentScreen(with screen: Route) -> NavigationResult {
         guard var routes = navigationState[stack], !routes.isEmpty else {
-            logger.warning(
-                "Navigation stack '\(self.stack.id)' is empty. Cannot replace the current screen."
-            )
+            logger.warning("Navigation stack '\(self.stack.id)' is empty. Cannot replace the current screen.")
             return .failure(.pathNotFound)
         }
         let previousScreen = routes.last
         routes.removeLast()
         routes.append(screen)
         navigationState[stack] = routes
-        return performSaveOperation(
-            "Replaced screen '\(previousScreen?.id ?? "unknown")' with '\(screen.id)' in navigation stack '\(self.stack.id)'."
-        )
+        return performSaveOperation("Replaced screen '\(previousScreen?.id ?? "unknown")' with '\(screen.id)' in navigation stack '\(self.stack.id)'.")
     }
 
     /// Replaces the specified navigation stack with a new sequence of routes.
@@ -103,9 +90,7 @@ extension NavigationManager: NavigationRouteDeletgate {
     @discardableResult
     func replace(stack: Stack, with routes: [Route]) -> NavigationResult {
         navigationState[stack] = routes
-        return performSaveOperation(
-            "Replacing entire navigation stack '\(stack.id)' with \(routes.count) new route(s)."
-        )
+        return performSaveOperation("Replacing entire navigation stack '\(stack.id)' with \(routes.count) new route(s).")
     }
 
     /// Replaces the current stack associated with this navigation manager with a new sequence of
@@ -133,9 +118,7 @@ extension NavigationManager: NavigationRouteDeletgate {
     @discardableResult
     func override(navigation: [Stack: [Route]]) -> NavigationResult {
         navigationState = navigation
-        return performSaveOperation(
-            "Overrode navigation state with new navigation data."
-        )
+        return performSaveOperation("Overrode navigation state with new navigation data.")
     }
 
     /// Resets the navigation stack, removing all screens.
