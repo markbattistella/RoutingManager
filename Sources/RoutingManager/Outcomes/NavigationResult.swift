@@ -10,7 +10,6 @@ import Foundation
 ///
 /// `NavigationResult` provides cases for successful, failed, and unknown navigation outcomes.
 public enum NavigationResult {
-
     /// The navigation result is unknown.
     case unknown
 

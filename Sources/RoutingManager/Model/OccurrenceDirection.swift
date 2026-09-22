@@ -12,7 +12,6 @@ import Foundation
 /// `OccurrenceDirection` is used when navigating to a specific occurrence of a screen
 /// in the navigation stack, such as the first or last instance.
 public enum OccurrenceDirection: String, Codable, Sendable, CaseIterable {
-
     /// The first occurrence of the specified screen in the navigation stack.
     case first
 

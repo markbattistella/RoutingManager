@@ -16,7 +16,6 @@ import Foundation
 ///   - Cases with associated values: `Stack.AppStack.userProfile.abc123`
 ///   - Override `id` with an explicit value for durable deep links or persistence across schema changes.
 public protocol NavigationStackRepresentable: Representable where ID == String {
-
     /// The unique identifier for the navigation stack.
     var id: String { get }
 }

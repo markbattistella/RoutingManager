@@ -11,7 +11,6 @@ import Foundation
 /// `JSONFileStorage` resolves its location lazily and reports filesystem failures to callers
 /// instead of trapping. Parent directories are created before the first save.
 internal struct JSONFileStorage<T: Codable>: FileStorageRepresentable {
-
     private let fileName: String
     private let directoryURL: URL?
 
@@ -39,9 +38,11 @@ internal struct JSONFileStorage<T: Codable>: FileStorageRepresentable {
         do {
             let data = try Data(contentsOf: fileURL)
             return try JSONDecoder().decode(T.self, from: data)
-        } catch let error as NavigationError {
+        }
+        catch let error as NavigationError {
             throw error
-        } catch {
+        }
+        catch {
             throw NavigationError.load(error)
         }
     }
@@ -54,12 +55,14 @@ internal struct JSONFileStorage<T: Codable>: FileStorageRepresentable {
 
     private func resolveFileURL(createDirectory: Bool) throws -> URL {
         let fileManager = FileManager.default
-        let documentsURL = try directoryURL ?? fileManager.url(
-            for: .documentDirectory,
-            in: .userDomainMask,
-            appropriateFor: nil,
-            create: createDirectory
-        )
+        let documentsURL =
+            try directoryURL
+            ?? fileManager.url(
+                for: .documentDirectory,
+                in: .userDomainMask,
+                appropriateFor: nil,
+                create: createDirectory
+            )
         let fileURL = documentsURL.appendingPathComponent(fileName, isDirectory: false)
 
         if createDirectory {

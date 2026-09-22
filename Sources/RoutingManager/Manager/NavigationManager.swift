@@ -17,66 +17,64 @@ import SwiftUI
 @Observable
 public final class NavigationManager<Stack, Route>
 where Stack: NavigationStackRepresentable, Route: NavigationRouteRepresentable {
+    /// A logger instance for tracking navigation-related events.
+    @ObservationIgnored
+    internal let logger = Logger(subsystem: "RoutingManager", category: "Navigation")
 
-  /// A logger instance for tracking navigation-related events.
-  @ObservationIgnored
-  internal let logger = Logger(subsystem: "RoutingManager", category: "Navigation")
+    /// The current navigation state, mapping each stack to its corresponding routes.
+    internal var navigationState: [Stack: [Route]]
 
-  /// The current navigation state, mapping each stack to its corresponding routes.
-  internal var navigationState: [Stack: [Route]]
+    /// The navigation stack associated with this manager.
+    internal let stack: Stack
 
-  /// The navigation stack associated with this manager.
-  internal let stack: Stack
+    /// The storage mechanism used for persisting navigation state, if applicable.
+    internal let storage: FileStorage<[Stack: [Route]]>?
 
-  /// The storage mechanism used for persisting navigation state, if applicable.
-  internal let storage: FileStorage<[Stack: [Route]]>?
+    /// The result of the last navigation operation.
+    public internal(set) var lastResult: NavigationResult
 
-  /// The result of the last navigation operation.
-  public internal(set) var lastResult: NavigationResult
+    /// Initializes a new `NavigationManager` for a given stack with a specified storage mode.
+    ///
+    /// - Parameters:
+    ///   - stack: The navigation stack that this manager will operate on.
+    ///   - storageMode: The mode of storage to be used for persisting navigation state.
+    public init(
+        for stack: Stack,
+        storageMode: StorageMode = .memory
+    ) {
+        self.navigationState = [:]
+        self.lastResult = .unknown
+        self.stack = stack
 
-  /// Initializes a new `NavigationManager` for a given stack with a specified storage mode.
-  ///
-  /// - Parameters:
-  ///   - stack: The navigation stack that this manager will operate on.
-  ///   - storageMode: The mode of storage to be used for persisting navigation state.
-  public init(
-    for stack: Stack,
-    storageMode: StorageMode = .memory
-  ) {
-    self.navigationState = [:]
-    self.lastResult = .unknown
-    self.stack = stack
-
-    switch storageMode {
-    case .memory:
-      self.storage = FileStorage(MemoryStorage())
-    case .json:
-      self.storage = FileStorage(JSONFileStorage())
-    case .jsonFile(let fileName):
-      self.storage = FileStorage(JSONFileStorage(fileName: fileName))
-    case .custom(let customStorage):
-      self.storage = customStorage
+        switch storageMode {
+            case .memory:
+                self.storage = FileStorage(MemoryStorage())
+            case .json:
+                self.storage = FileStorage(JSONFileStorage())
+            case .jsonFile(let fileName):
+                self.storage = FileStorage(JSONFileStorage(fileName: fileName))
+            case .custom(let customStorage):
+                self.storage = customStorage
+        }
     }
-  }
 
-  /// Defines the available storage modes for persisting navigation state.
-  public enum StorageMode {
+    /// Defines the available storage modes for persisting navigation state.
+    public enum StorageMode {
+        /// Navigation state is stored in memory.
+        case memory
 
-    /// Navigation state is stored in memory.
-    case memory
+        /// Navigation state is stored in a JSON file.
+        case json
 
-    /// Navigation state is stored in a JSON file.
-    case json
+        /// Navigation state is stored in a JSON file with a caller-supplied name.
+        ///
+        /// Use a unique filename for each independently persisted manager.
+        case jsonFile(fileName: String)
 
-    /// Navigation state is stored in a JSON file with a caller-supplied name.
-    ///
-    /// Use a unique filename for each independently persisted manager.
-    case jsonFile(fileName: String)
-
-    /// A custom storage implementation is used.
-    ///
-    /// - Parameter customStorage: A `FileStorage` instance handling the custom storage
-    /// mechanism.
-    case custom(FileStorage<[Stack: [Route]]>)
-  }
+        /// A custom storage implementation is used.
+        ///
+        /// - Parameter customStorage: A `FileStorage` instance handling the custom storage
+        /// mechanism.
+        case custom(FileStorage<[Stack: [Route]]>)
+    }
 }

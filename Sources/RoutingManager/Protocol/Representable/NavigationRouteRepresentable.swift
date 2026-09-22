@@ -16,7 +16,6 @@ import SwiftUI
 ///   - Cases with associated values: `Route.SettingsRoute.profile.abc123`
 ///   - Override `id` with an explicit value for durable deep links or persistence across schema changes.
 public protocol NavigationRouteRepresentable: Representable where ID == String {
-
     /// The type of SwiftUI view associated with this navigation route.
     associatedtype Body: View
 
@@ -24,7 +23,9 @@ public protocol NavigationRouteRepresentable: Representable where ID == String {
     var id: String { get }
 
     /// The SwiftUI view representing the content of this navigation route.
-    @MainActor @ViewBuilder var body: Self.Body { get }
+    @MainActor
+    @ViewBuilder
+    var body: Self.Body { get }
 }
 
 extension NavigationRouteRepresentable {
