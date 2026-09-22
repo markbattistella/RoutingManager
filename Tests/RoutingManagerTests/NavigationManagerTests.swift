@@ -4,6 +4,7 @@
 // Website: https://markbattistella.com
 //
 
+import Foundation
 import SwiftUI
 import Testing
 
@@ -149,6 +150,131 @@ struct NavigationManagerTests {
     #expect(manager.lastResult.isDeleteFailure)
   }
 
+
+  @Test("Empty push is a no-op and does not persist an empty stack")
+  func emptyPushDoesNotCreateStack() {
+    let storage = InMemoryTestStorage<[TestStack: [TestRoute]]>()
+    let manager = makeManager(storage: storage)
+
+    let result = manager.push()
+
+    #expect(result.isSuccess)
+    #expect(manager.listRoutes().isEmpty)
+    #expect(storage.savedObject == nil)
+  }
+
+  @Test("Save failures are reported while preserving the new in-memory route")
+  func saveFailurePreservesInMemoryState() {
+    let storage = InMemoryTestStorage<[TestStack: [TestRoute]]>()
+    storage.saveError = TestStorageError.saveFailed
+    let manager = makeManager(storage: storage)
+
+    let result = manager.push(to: .home)
+
+    #expect(result.error?.isSaveFailure == true)
+    #expect(manager.listRoutes()[.main] == [.home])
+    #expect(storage.savedObject == nil)
+  }
+
+  @Test("Missing persisted state is a successful no-op")
+  func missingPersistedStateIsSuccessfulNoOp() {
+    let manager = makeManager()
+    manager.push(to: .home)
+
+    #expect(manager.load().isSuccess)
+    #expect(manager.listRoutes()[.main] == [.home])
+  }
+
+  @Test("Public replacement APIs update one stack or the complete state")
+  func publicReplacementAPIs() {
+    let manager = makeManager()
+
+    #expect(manager.replaceCurrentStack(with: [.home]).isSuccess)
+    #expect(manager.replace(stack: .secondary, with: [.settings]).isSuccess)
+    #expect(manager.listRoutes()[.secondary] == [.settings])
+    #expect(manager.override(navigation: [.main: [.details(id: 4)]]).isSuccess)
+    #expect(manager.listRoutes() == [.main: [.details(id: 4)]])
+  }
+
+
+  @Test("Occurrence lookup uses route equality even when identifiers collide")
+  func occurrenceLookupUsesRouteEquality() {
+    let manager = NavigationManager<TestStack, CollidingRoute>(for: .main)
+    manager.push(to: .item(1), .item(2), .item(1), .item(3))
+
+    #expect(manager.goToOccurrence(of: .item(2), direction: .first).isSuccess)
+    #expect(manager.listRoutes()[.main] == [.item(1), .item(2)])
+  }
+
+
+  @Test("Named JSON stores keep independent managers isolated")
+  func namedJSONStoresAreIsolated() throws {
+    let directoryURL = FileManager.default.temporaryDirectory
+      .appendingPathComponent("RoutingManagerTests-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directoryURL) }
+
+    let mainStorage = FileStorage(
+      JSONFileStorage<[TestStack: [TestRoute]]>(
+        fileName: "main.json",
+        directoryURL: directoryURL
+      )
+    )
+    let secondaryStorage = FileStorage(
+      JSONFileStorage<[TestStack: [TestRoute]]>(
+        fileName: "secondary.json",
+        directoryURL: directoryURL
+      )
+    )
+    let main = NavigationManager<TestStack, TestRoute>(
+      for: .main,
+      storageMode: .custom(mainStorage)
+    )
+    let secondary = NavigationManager<TestStack, TestRoute>(
+      for: .secondary,
+      storageMode: .custom(secondaryStorage)
+    )
+    main.push(to: .home)
+    secondary.push(to: .settings)
+
+    let restoredMain = NavigationManager<TestStack, TestRoute>(
+      for: .main,
+      storageMode: .custom(mainStorage)
+    )
+    let restoredSecondary = NavigationManager<TestStack, TestRoute>(
+      for: .secondary,
+      storageMode: .custom(secondaryStorage)
+    )
+
+    #expect(restoredMain.load().isSuccess)
+    #expect(restoredSecondary.load().isSuccess)
+    #expect(restoredMain.listRoutes() == [.main: [.home]])
+    #expect(restoredSecondary.listRoutes() == [.secondary: [.settings]])
+  }
+
+  @Test("Corrupt JSON is reported as a load failure without replacing current state")
+  func corruptJSONPreservesCurrentState() throws {
+    let directoryURL = FileManager.default.temporaryDirectory
+      .appendingPathComponent("RoutingManagerTests-\(UUID().uuidString)", isDirectory: true)
+    let fileURL = directoryURL.appendingPathComponent("corrupt.json")
+    defer { try? FileManager.default.removeItem(at: directoryURL) }
+
+    let storage = FileStorage(
+      JSONFileStorage<[TestStack: [TestRoute]]>(
+        fileName: "corrupt.json",
+        directoryURL: directoryURL
+      )
+    )
+    let manager = NavigationManager<TestStack, TestRoute>(
+      for: .main,
+      storageMode: .custom(storage)
+    )
+    manager.push(to: .home)
+    try Data("{not-json".utf8).write(to: fileURL)
+
+    #expect(manager.load().error?.isLoadFailure == true)
+    #expect(manager.listRoutes()[.main] == [.home])
+  }
+
   private func makeManager(
     storage: InMemoryTestStorage<[TestStack: [TestRoute]]>? = nil
   ) -> NavigationManager<TestStack, TestRoute> {
@@ -165,12 +291,26 @@ struct NavigationManagerTests {
 
 private enum TestStack: String, NavigationStackRepresentable {
   case main
+  case secondary
 }
 
 private enum TestRoute: Hashable, NavigationRouteRepresentable {
   case home
   case settings
   case details(id: Int)
+
+  @MainActor
+  @ViewBuilder
+  var body: some View {
+    EmptyView()
+  }
+}
+
+
+private enum CollidingRoute: Hashable, NavigationRouteRepresentable {
+  case item(Int)
+
+  var id: String { "shared-id" }
 
   @MainActor
   @ViewBuilder
@@ -209,8 +349,22 @@ private final class InMemoryTestStorage<T: Codable>: FileStorageRepresentable {
 }
 
 private enum TestStorageError: Error {
+  case saveFailed
   case loadFailed
   case deleteFailed
+}
+
+extension NavigationError {
+
+  fileprivate var isSaveFailure: Bool {
+    if case .save = self { return true }
+    return false
+  }
+
+  fileprivate var isLoadFailure: Bool {
+    if case .load = self { return true }
+    return false
+  }
 }
 
 extension NavigationResult {

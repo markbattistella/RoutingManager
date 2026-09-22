@@ -6,7 +6,7 @@
 
 import Foundation
 import Observation
-import SimpleLogger
+import OSLog
 import SwiftUI
 
 /// A class responsible for managing navigation state and persistence.
@@ -20,7 +20,7 @@ where Stack: NavigationStackRepresentable, Route: NavigationRouteRepresentable {
 
   /// A logger instance for tracking navigation-related events.
   @ObservationIgnored
-  internal let logger = SimpleLogger(category: .navigation)
+  internal let logger = Logger(subsystem: "RoutingManager", category: "Navigation")
 
   /// The current navigation state, mapping each stack to its corresponding routes.
   internal var navigationState: [Stack: [Route]]
@@ -52,6 +52,8 @@ where Stack: NavigationStackRepresentable, Route: NavigationRouteRepresentable {
       self.storage = FileStorage(MemoryStorage())
     case .json:
       self.storage = FileStorage(JSONFileStorage())
+    case .jsonFile(let fileName):
+      self.storage = FileStorage(JSONFileStorage(fileName: fileName))
     case .custom(let customStorage):
       self.storage = customStorage
     }
@@ -65,6 +67,11 @@ where Stack: NavigationStackRepresentable, Route: NavigationRouteRepresentable {
 
     /// Navigation state is stored in a JSON file.
     case json
+
+    /// Navigation state is stored in a JSON file with a caller-supplied name.
+    ///
+    /// Use a unique filename for each independently persisted manager.
+    case jsonFile(fileName: String)
 
     /// A custom storage implementation is used.
     ///

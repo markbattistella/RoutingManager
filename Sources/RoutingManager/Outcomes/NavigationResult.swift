@@ -22,6 +22,18 @@ public enum NavigationResult {
     /// - Parameter error: The `NavigationError` describing the reason for the failure.
     case failure(NavigationError)
 
+    /// Whether the operation completed successfully.
+    public var isSuccess: Bool {
+        if case .success = self { return true }
+        return false
+    }
+
+    /// The associated navigation error, or `nil` for successful and unknown results.
+    public var error: NavigationError? {
+        guard case .failure(let error) = self else { return nil }
+        return error
+    }
+
     /// Handles a navigation error if the result is a failure.
     ///
     /// This method allows error handling using a closure. If the result is `.failure`,

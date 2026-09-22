@@ -41,8 +41,8 @@ extension NavigationManager: NavigationStateDelegate {
         logger.info("Successfully loaded navigation state from storage.")
         return record(.success)
       }
-      logger.warning("No navigation state found in storage.")
-      return record(.failure(.pathNotFound))
+      logger.info("No navigation state found in storage. Keeping the current state.")
+      return record(.success)
     } catch {
       logger.error("Failed to load navigation state: \(error.localizedDescription)")
       if let navigationError = error as? NavigationError {

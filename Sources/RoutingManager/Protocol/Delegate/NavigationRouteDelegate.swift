@@ -11,7 +11,7 @@ import Foundation
 /// The `NavigationRouteDelegate` protocol provides methods to manipulate navigation stacks,
 /// including pushing screens, navigating back, replacing screens, and resetting the navigation flow.
 @MainActor
-internal protocol NavigationRouteDeletgate {
+internal protocol NavigationRouteDelegate {
 
   /// The type that represents the navigation stack.
   associatedtype Stack: NavigationStackRepresentable

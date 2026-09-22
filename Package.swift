@@ -18,13 +18,10 @@ let package = Package(
       targets: ["RoutingManager"]
     )
   ],
-  dependencies: [
-    .package(url: "https://github.com/markbattistella/SimpleLogger", from: "26.0.0")
-  ],
   targets: [
     .target(
       name: "RoutingManager",
-      dependencies: ["SimpleLogger"],
+      dependencies: [],
       swiftSettings: [
         .swiftLanguageMode(.v6)
       ]

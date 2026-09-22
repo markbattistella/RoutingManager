@@ -8,52 +8,67 @@ import Foundation
 
 /// A file storage implementation that saves and loads data in JSON format.
 ///
-/// `JSONFileStorage` conforms to `FileStorageRepresentable` and provides methods for persisting,
-/// retrieving, and deleting `Codable` objects from a file in the user's document directory.
+/// `JSONFileStorage` resolves its location lazily and reports filesystem failures to callers
+/// instead of trapping. Parent directories are created before the first save.
 internal struct JSONFileStorage<T: Codable>: FileStorageRepresentable {
 
-    /// The file URL where the JSON data is stored.
-    private let fileURL: URL
+    private let fileName: String
+    private let directoryURL: URL?
 
-    /// Initializes a new `JSONFileStorage` instance with a specified file name.
+    /// Initializes a new JSON store in the user's documents directory.
     ///
-    /// - Parameter fileName: The name of the file where data will be stored. Defaults to
-    /// "NavigationState.json"`.
-    internal init(fileName: String = "NavigationState.json") {
-        let directory = FileManager.default
-            .urls(for: .documentDirectory, in: .userDomainMask)
-            .first!
-        self.fileURL = directory.appendingPathComponent(fileName)
+    /// - Parameter fileName: A relative filename or path. Defaults to `NavigationState.json`.
+    internal init(
+        fileName: String = "NavigationState.json",
+        directoryURL: URL? = nil
+    ) {
+        self.fileName = fileName
+        self.directoryURL = directoryURL
     }
 
-    /// Saves an object to the file in JSON format.
-    ///
-    /// - Parameter object: The object to be encoded and saved.
-    /// - Throws: An error if encoding fails or if the file cannot be written.
     internal func save(_ object: T) throws {
+        let fileURL = try resolveFileURL(createDirectory: true)
         let data = try JSONEncoder().encode(object)
         try data.write(to: fileURL, options: .atomic)
     }
 
-    /// Loads an object from the file if it exists.
-    ///
-    /// - Returns: The decoded object if the file exists and is valid, otherwise `nil`.
-    /// - Throws: A `NavigationError.load` error if decoding fails.
     internal func load() throws -> T? {
+        let fileURL = try resolveFileURL(createDirectory: false)
         guard FileManager.default.fileExists(atPath: fileURL.path) else { return nil }
-        let data = try Data(contentsOf: fileURL)
+
         do {
+            let data = try Data(contentsOf: fileURL)
             return try JSONDecoder().decode(T.self, from: data)
+        } catch let error as NavigationError {
+            throw error
         } catch {
             throw NavigationError.load(error)
         }
     }
 
-    /// Deletes the stored file if it exists.
-    ///
-    /// - Throws: An error if the file cannot be deleted.
     internal func delete() throws {
+        let fileURL = try resolveFileURL(createDirectory: false)
         guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
         try FileManager.default.removeItem(at: fileURL)
+    }
+
+    private func resolveFileURL(createDirectory: Bool) throws -> URL {
+        let fileManager = FileManager.default
+        let documentsURL = try directoryURL ?? fileManager.url(
+            for: .documentDirectory,
+            in: .userDomainMask,
+            appropriateFor: nil,
+            create: createDirectory
+        )
+        let fileURL = documentsURL.appendingPathComponent(fileName, isDirectory: false)
+
+        if createDirectory {
+            try fileManager.createDirectory(
+                at: fileURL.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+        }
+
+        return fileURL
     }
 }

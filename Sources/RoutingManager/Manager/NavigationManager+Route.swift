@@ -6,7 +6,7 @@
 
 import Foundation
 
-extension NavigationManager: NavigationRouteDeletgate {
+extension NavigationManager: NavigationRouteDelegate {
 
   /// Pushes one or more screens onto the navigation stack.
   ///
@@ -14,6 +14,7 @@ extension NavigationManager: NavigationRouteDeletgate {
   /// - Returns: A `NavigationResult` indicating success or failure of the operation.
   @discardableResult
   public func push(to screens: Route...) -> NavigationResult {
+    guard !screens.isEmpty else { return record(.success) }
     navigationState[stack, default: []].append(contentsOf: screens)
     return performSaveOperation(
       "Pushing \(screens.count) screen(s) onto navigation stack '\(stack.id)'.")
@@ -57,8 +58,8 @@ extension NavigationManager: NavigationRouteDeletgate {
 
     let index =
       (direction == .first)
-      ? routes.firstIndex(where: { $0.id == screen.id })
-      : routes.lastIndex(where: { $0.id == screen.id })
+      ? routes.firstIndex(of: screen)
+      : routes.lastIndex(of: screen)
 
     guard let index = index else {
       logger.warning("Screen '\(screen.id)' not found in stack '\(self.stack.id)'.")
@@ -102,7 +103,7 @@ extension NavigationManager: NavigationRouteDeletgate {
   ///   - routes: The new sequence of routes to be set in the specified stack.
   /// - Returns: A `NavigationResult` indicating the success or failure of the operation.
   @discardableResult
-  func replace(stack: Stack, with routes: [Route]) -> NavigationResult {
+  public func replace(stack: Stack, with routes: [Route]) -> NavigationResult {
     setRoutes(routes, for: stack)
     return performSaveOperation(
       "Replacing entire navigation stack '\(stack.id)' with \(routes.count) new route(s).")
@@ -117,7 +118,7 @@ extension NavigationManager: NavigationRouteDeletgate {
   /// - Parameter routes: The new sequence of routes to replace the current stack.
   /// - Returns: A `NavigationResult` indicating the success or failure of the operation.
   @discardableResult
-  func replaceCurrentStack(with routes: [Route]) -> NavigationResult {
+  public func replaceCurrentStack(with routes: [Route]) -> NavigationResult {
     return replace(stack: stack, with: routes)
   }
 
@@ -131,7 +132,7 @@ extension NavigationManager: NavigationRouteDeletgate {
   /// stacks and values are arrays of routes.
   /// - Returns: A `NavigationResult` indicating the success or failure of the operation.
   @discardableResult
-  func override(navigation: [Stack: [Route]]) -> NavigationResult {
+  public func override(navigation: [Stack: [Route]]) -> NavigationResult {
     navigationState = navigation
     return performSaveOperation("Overrode navigation state with new navigation data.")
   }

@@ -11,10 +11,10 @@ import Foundation
 /// `NavigationStackRepresentable` defines a stack that conforms to `Representable` and is
 /// identified by a `String` ID.
 ///
-/// - Note: The `id` property is automatically generated using a stable, hierarchical format:
+/// - Note: The default `id` is a convenient hierarchical description:
 ///   - Simple cases: `Stack.AppStack.main`
 ///   - Cases with associated values: `Stack.AppStack.userProfile.abc123`
-///   - Override `id` if you need custom identifier logic.
+///   - Override `id` with an explicit value for durable deep links or persistence across schema changes.
 public protocol NavigationStackRepresentable: Representable where ID == String {
 
     /// The unique identifier for the navigation stack.

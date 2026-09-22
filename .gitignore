@@ -3,7 +3,6 @@
 *.ipa
 *.dSYM.zip
 *.dSYM
-*.xcworkspace
 .swiftpm/
 .swiftpm/*
 .build/
@@ -12,3 +11,6 @@ Packages/
 Package.pins
 Package.resolved
 .vscode
+.DS_Store
+DerivedData/
+!RoutingManager.xcworkspace/xcshareddata/swiftpm/Package.resolved

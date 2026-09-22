@@ -6,22 +6,21 @@
 
 import Foundation
 
-/// Generates a stable, hierarchical identifier for navigation types.
+/// Generates a convenient, hierarchical identifier for navigation types.
 ///
 /// This function uses reflection to create identifiers in the format:
 /// `<prefix>.<TypeName>.<caseName>[.<associatedValues>]`
 ///
-/// The generated identifiers are:
-/// - **Stable**: Same input always produces the same output across app launches
-/// - **Unique**: Each case and associated value combination produces a distinct identifier
-/// - **Hierarchical**: Uses dot notation for easy parsing and deep linking
-/// - **Human-readable**: Includes type and case names for debugging
+/// The generated identifier is human-readable and deterministic for common enum cases whose
+/// associated values have stable textual descriptions. It is not a durable persistence or deep-link
+/// format for arbitrary values: schema changes, type renames, and custom descriptions can change it.
+/// Override `id` with an explicit, versioned representation when long-term stability is required.
 ///
 /// - Parameters:
 ///   - value: The navigation type instance to generate an identifier for.
 ///   - prefix: The prefix to prepend to the identifier (e.g., "Stack" or "Route").
 ///
-/// - Returns: A stable string identifier in the format `<prefix>.<TypeName>.<caseName>[.<associatedValues>]`
+/// - Returns: A descriptive string identifier in the format `<prefix>.<TypeName>.<caseName>[.<associatedValues>]`
 ///
 /// ## Examples
 ///
